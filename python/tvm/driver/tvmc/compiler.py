@@ -170,7 +170,7 @@ def compile_model(
         pass doesn't currently guarantee the whole of the graph will
         be converted to the chosen layout.
 
-    Returns
+    Returns #TODO: UPDATE THIS!
     -------
     graph : str
         A JSON-serialized TVM execution graph.
@@ -237,9 +237,7 @@ def compile_model(
         source = str(mod) if source_type == "relay" else lib.get_source(source_type)
         dumps[source_type] = source
 
-    # TODO we need to update this return to use the updated graph module APIs
-    #      as these getter functions will be deprecated in the next release (@leandron)
-    return graph_module.get_json(), graph_module.get_lib(), graph_module.get_params(), dumps
+    return graph_module, dumps
 
 
 def save_module(module_path, graph, lib, params, cross=None):
