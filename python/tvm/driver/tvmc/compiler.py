@@ -170,14 +170,10 @@ def compile_model(
         pass doesn't currently guarantee the whole of the graph will
         be converted to the chosen layout.
 
-    Returns #TODO: UPDATE THIS!
+    Returns
     -------
-    graph : str
-        A JSON-serialized TVM execution graph.
-    lib : tvm.module.Module
-        A TVM module containing the compiled functions.
-    params : dict
-        The parameters (weights) for the TVM module.
+    graph_rt_module : GraphRuntimeFactoryModule
+        A TVM module containing all the required artifacts to run the model (Hence rt as runtime).
     dumps : dict
         Dictionary containing the dumps specified.
 
@@ -225,19 +221,19 @@ def compile_model(
     else:
         with tvm.transform.PassContext(opt_level=3, config=config):
             logger.debug("building relay graph (no tuning records provided)")
-            graph_module = relay.build(mod, tvm_target, params=params, target_host=target_host)
+            graph_rt_module = relay.build(mod, tvm_target, params=params, target_host=target_host)
 
     # Generate output dump files with sources
     dump_code = dump_code or []
     dumps = {}
     for source_type in dump_code:
-        lib = graph_module.get_lib()
+        lib = graph_rt_module.get_lib()
         # TODO lib.get_source call have inconsistent behavior for unsupported
         #      formats (@leandron).
         source = str(mod) if source_type == "relay" else lib.get_source(source_type)
         dumps[source_type] = source
 
-    return graph_module, dumps
+    return graph_rt_module, dumps
 
 
 def save_module(module_path, graph, lib, params, cross=None):

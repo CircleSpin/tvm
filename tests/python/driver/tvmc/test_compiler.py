@@ -28,6 +28,8 @@ from tvm.relay.op.contrib.ethosn import ethosn_available
 
 from tvm.driver import tvmc
 
+from tvm.relay.backend.graph_runtime_factory import GraphRuntimeFactoryModule
+
 
 def test_save_dumps(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp("data")
@@ -45,13 +47,13 @@ def test_save_dumps(tmpdir_factory):
 def verify_compile_tflite_module(model, shape_dict=None):
     pytest.importorskip("tflite")
     mod, params = tvmc.load(model, shape_dict = shape_dict)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod, params, target="llvm", dump_code="ll", alter_layout="NCHW"
     )
 
     # check for output types
     assert type(dumps) is dict
-    assert type (lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type (graph_rt_module) is GraphRuntimeFactoryModule
 
 
 def test_compile_tflite_module(tflite_mobilenet_v1_1_quant):
