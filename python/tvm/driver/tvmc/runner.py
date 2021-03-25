@@ -339,8 +339,6 @@ def run_module(
         logger.debug("extracting module file %s", module_file)
         t = tarfile.open(module_file)
         t.extractall(tmp_dir)
-        graph = open(os.path.join(tmp_dir, "mod.json")).read()
-        params = bytearray(open(os.path.join(tmp_dir, "mod.params"), "rb").read())
 
         if hostname:
             # Remote RPC
@@ -370,15 +368,15 @@ def run_module(
 
         if profile:
             logger.debug("creating runtime with profiling enabled")
-            module = debug_runtime.create(graph, lib, ctx, dump_root="./prof")
+            module = debug_runtime.create(lib.get_json(), lib.get_lib(), ctx, dump_root="./prof")
+            logger.debug("load params into the runtime module")
+            module.load_params(lib.get_params())
         else:
             logger.debug("creating runtime with profiling disabled")
-            module = runtime.create(graph, lib, ctx)
+            # Create graph runtime
+            module = runtime.GraphModule(lib["default"](ctx))
 
-        logger.debug("load params into the runtime module")
-        module.load_params(params)
-
-        shape_dict, dtype_dict = get_input_info(graph, params)
+        shape_dict, dtype_dict = get_input_info(lib.get_json(), lib.get_params())
         inputs_dict = make_inputs_dict(inputs_file, shape_dict, dtype_dict, fill_mode)
 
         logger.debug("setting inputs to the module")

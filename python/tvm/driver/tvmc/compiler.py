@@ -236,7 +236,7 @@ def compile_model(
     return graph_rt_module, dumps
 
 
-def save_module(module_path, graph, lib, params, cross=None):
+def save_module(module_path, graph_rt_module, cross=None):
     """
     Create a tarball containing the generated TVM graph,
     exported library and parameters
@@ -246,41 +246,25 @@ def save_module(module_path, graph, lib, params, cross=None):
     module_path : str
         path to the target tar.gz file to be created,
         including the file name
-    graph : str
-        A JSON-serialized TVM execution graph.
-    lib : tvm.module.Module
-        A TVM module containing the compiled functions.
-    params : dict
-        The parameters (weights) for the TVM module.
+    graph_rt_module : GraphRuntimeFactoryModule
+        A TVM module containing all the required artifacts to run the model (Hence rt as runtime).
     cross : str or callable object, optional
         Function that performs the actual compilation
 
     """
     lib_name = "mod.so"
-    graph_name = "mod.json"
-    param_name = "mod.params"
     temp = utils.tempdir()
     path_lib = temp.relpath(lib_name)
     if not cross:
         logger.debug("exporting library to %s", path_lib)
-        lib.export_library(path_lib)
+        graph_rt_module.export_library(path_lib)
     else:
         logger.debug("exporting library to %s , using cross compiler %s", path_lib, cross)
         lib.export_library(path_lib, cc.cross_compiler(cross))
 
-    with open(temp.relpath(graph_name), "w") as graph_file:
-        logger.debug("writing graph to file to %s", graph_file.name)
-        graph_file.write(graph)
-
-    with open(temp.relpath(param_name), "wb") as params_file:
-        logger.debug("writing params to file to %s", params_file.name)
-        params_file.write(runtime.save_param_dict(params))
-
     logger.debug("saving module as tar file to %s", module_path)
     with tarfile.open(module_path, "w") as tar:
         tar.add(path_lib, lib_name)
-        tar.add(temp.relpath(graph_name), graph_name)
-        tar.add(temp.relpath(param_name), param_name)
 
 
 def save_dumps(module_name, dumps, dump_root="."):
