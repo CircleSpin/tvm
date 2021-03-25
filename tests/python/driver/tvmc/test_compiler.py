@@ -97,7 +97,7 @@ def test_compile_keras__save_module(keras_resnet50, tmpdir_factory):
     expected_temp_dir = tmpdir_factory.mktemp("saved_output")
     expected_file_name = "saved.tar"
     module_file = os.path.join(expected_temp_dir, expected_file_name)
-    tvmc.compiler.save_module(graph_rt_module) 
+    tvmc.compiler.save_module(module_file, graph_rt_module) 
 
     assert os.path.exists(module_file), "output file {0} should exist".format(module_file)
 

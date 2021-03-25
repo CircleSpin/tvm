@@ -355,6 +355,7 @@ def run_module(
 
         session.upload(os.path.join(tmp_dir, "mod.so"))
         lib = session.load_module("mod.so")
+        print(type(lib))
 
         # TODO expand to other supported devices, as listed in tvm.rpc.client (@leandron)
         logger.debug("device is %s", device)

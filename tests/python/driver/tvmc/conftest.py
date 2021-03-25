@@ -50,8 +50,8 @@ def get_sample_compiled_module(target_dir):
         "mobilenet_v1_1.0_224_quant.tflite",
         temp_dir=target_dir,
     )
-
-    return tvmc.compiler.compile_model(model_file, target="llvm")
+    mod, params = tvmc.frontends.load_model(model_file)
+    return tvmc.compiler.compile_model(mod, params, target="llvm")
 
 
 # PyTest fixtures
@@ -142,10 +142,10 @@ def tflite_compiled_module_as_tarfile(tmpdir_factory):
         return ""
 
     target_dir = tmpdir_factory.mktemp("data")
-    graph, lib, params, _ = get_sample_compiled_module(target_dir)
+    graph_rt_module, _ = get_sample_compiled_module(target_dir)
 
     module_file = os.path.join(target_dir, "mock.tar")
-    tvmc.compiler.save_module(module_file, graph, lib, params)
+    tvmc.compiler.save_module(module_file, graph_rt_module) #Jocelyn! Changed this
 
     return module_file
 
