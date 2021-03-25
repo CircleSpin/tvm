@@ -75,7 +75,7 @@ def test_cross_compile_aarch64_tflite_module(tflite_mobilenet_v1_1_quant):
     pytest.importorskip("tflite")
 
     mod, params = tvmc.load(flite_mobilenet_v1_1_quant)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod, 
         params,
         target="llvm -device=arm_cpu -mtriple=aarch64-linux-gnu -mattr='+neon'",
@@ -83,7 +83,7 @@ def test_cross_compile_aarch64_tflite_module(tflite_mobilenet_v1_1_quant):
     )
 
     # check for output types
-    assert type(lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type(graph_rt_module) is GraphRuntimeFactoryModule
     assert type(dumps) is dict
 
 
@@ -92,12 +92,12 @@ def test_compile_keras__save_module(keras_resnet50, tmpdir_factory):
     pytest.importorskip("tensorflow")
 
     mod, params = tvmc.load(keras_resnet50)
-    lib, dumps = tvmc.compile(mod, params, target="llvm", dump_code="ll")
+    graph_rt_module, dumps = tvmc.compile(mod, params, target="llvm", dump_code="ll")
 
     expected_temp_dir = tmpdir_factory.mktemp("saved_output")
     expected_file_name = "saved.tar"
     module_file = os.path.join(expected_temp_dir, expected_file_name)
-    tvmc.compiler.save_module(module_file, graph, lib, params) #Just change to lib??? 
+    tvmc.compiler.save_module(graph_rt_module) 
 
     assert os.path.exists(module_file), "output file {0} should exist".format(module_file)
 
@@ -111,7 +111,7 @@ def test_cross_compile_aarch64_keras_module(keras_resnet50):
     pytest.importorskip("tensorflow")
 
     mod, params = tvmc.load(keras_resnet50)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mods,
         params,
         target="llvm -device=arm_cpu -mtriple=aarch64-linux-gnu -mattr='+neon'",
@@ -119,7 +119,7 @@ def test_cross_compile_aarch64_keras_module(keras_resnet50):
     )
 
     # check for output types
-    assert type(lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type(lib) is GraphRuntimeFactoryModule
     assert type(dumps) is dict
     assert "asm" in dumps.keys()
 
@@ -128,12 +128,12 @@ def verify_compile_onnx_module(model, shape_dict=None):
     # some CI environments wont offer onnx, so skip in case it is not present
     pytest.importorskip("onnx")
     mod, params = tvmc.load(model, shape_dict = shape_dict)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod, params, target="llvm", dump_code="ll"
     )
 
     # check for output types
-    assert type(lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type(graph_rt_module) is GraphRuntimeFactoryModule
     assert type(dumps) is dict
     assert "ll" in dumps.keys()
 
@@ -156,7 +156,7 @@ def test_cross_compile_aarch64_onnx_module(onnx_resnet50):
     pytest.importorskip("onnx")
 
     mod, params = tvmc.load(onnx_resnet50)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod,
         params,
         target="llvm -device=arm_cpu -mtriple=aarch64-linux-gnu -mattr=+neon",
@@ -164,7 +164,7 @@ def test_cross_compile_aarch64_onnx_module(onnx_resnet50):
     )
 
     # check for output types
-    assert type(lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type(graph_rt_module) is GraphRuntimeFactoryModule
     assert type(dumps) is dict
     assert "asm" in dumps.keys()
 
@@ -173,7 +173,7 @@ def test_cross_compile_aarch64_onnx_module(onnx_resnet50):
 def test_compile_opencl(tflite_mobilenet_v1_0_25_128):
     pytest.importorskip("tflite")
     mod, params = tvmc.load(tflite_mobilenet_v1_0_25_128)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod,
         params,
         target="opencl",
@@ -182,7 +182,7 @@ def test_compile_opencl(tflite_mobilenet_v1_0_25_128):
     )
 
     # check for output types
-    assert type(lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type(graph_rt_module) is GraphRuntimeFactoryModule
     assert type(dumps) is dict
 
 
@@ -193,12 +193,12 @@ def test_compile_opencl(tflite_mobilenet_v1_0_25_128):
 def test_compile_tflite_module_with_external_codegen(tflite_mobilenet_v1_1_quant):
     pytest.importorskip("tflite")
     mod, params = tvmc.load(tflite_mobilenet_v1_1_quant)
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod, params, target="ethos-n77, llvm", dump_code="relay"
     )
 
     # check for output types
-    assert type(lib) is tvm.relay.backend.graph_runtime_factory.GraphRuntimeFactoryModule
+    assert type(graph_rt_module) is GraphRuntimeFactoryModule
     assert type(dumps) is dict
 
 
@@ -216,7 +216,7 @@ def test_compile_check_configs_composite_target(mock_pc, mock_fe, mock_ct, mock_
     mock_relay.return_value = mock.MagicMock()
 
     mod, params = tvmc.load("no_file_needed")
-    lib, dumps = tvmc.compile(
+    graph_rt_module, dumps = tvmc.compile(
         mod, params, target="mockcodegen -testopt=value, llvm"
     )
 
