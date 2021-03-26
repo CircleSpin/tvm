@@ -96,3 +96,7 @@ def test_run_tflite_module__with_profile__valid_input(
     assert type(outputs) is dict
     assert type(times) is tuple
     assert "output_0" in outputs.keys()
+
+def test_load_module(tflite_compiled_module_as_tarfile):
+    loaded = tvmc.runner.load_module(tflite_compiled_module_as_tarfile)
+    print(loaded)

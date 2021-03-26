@@ -252,8 +252,12 @@ def save_module(module_path, graph_rt_module, cross=None):
     """
     # Extract artifacts from graph_rt_module
     lib = graph_rt_module.get_lib()
+    print(type(lib))
     graph = graph_rt_module.get_json()
+    print(type(graph))
+    #print(graph)
     params = graph_rt_module.get_params()
+    print(type(params))
 
     lib_name = "mod.so"
     graph_name = "mod.json"

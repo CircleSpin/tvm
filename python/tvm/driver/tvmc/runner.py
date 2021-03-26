@@ -30,6 +30,10 @@ from tvm.contrib import graph_runtime as runtime
 from tvm.contrib.debugger import debug_runtime
 from tvm.relay import load_param_dict
 
+from tvm import relay
+import tvm
+from tvm.relay.backend.graph_runtime_factory import GraphRuntimeFactoryModule
+
 from . import common
 from .common import TVMCException
 from .main import register_parser
@@ -283,6 +287,41 @@ def make_inputs_dict(inputs_file, shape_dict, dtype_dict, fill_mode):
             inputs_dict[input_name] = data
 
     return inputs_dict
+
+def load_module(module_file):
+    """Import a saved tvmc module and convert it into a GraphRuntimeFactoryModule.
+
+    Parameters
+    ----------
+    module_file : str
+        The path to the module file (a .tar file).
+    
+    Returns
+    -------
+    graph_rt_module : GraphRuntimeFactoryModule
+        A TVM module containing all the required artifacts to run the model (Hence rt as runtime).
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        logger.debug("extracting module file %s", module_file)
+        t = tarfile.open(module_file)
+        t.extractall(tmp_dir)
+
+        lib = tvm.runtime.load_module(os.path.join(tmp_dir, "mod.so"))
+        print(type(lib))
+
+        graph = str(json.loads(open(os.path.join(tmp_dir, "mod.json")).read()))
+        print(type(graph))
+        # print(graph)
+        
+
+        # graph = open(os.path.join(tmp_dir, "mod.json")).read()
+        raw_params = bytearray(open(os.path.join(tmp_dir, "mod.params"), "rb").read())
+        params = relay.load_param_dict(raw_params)
+        print(type(params))
+        
+
+    graph_rt_module = GraphRuntimeFactoryModule(None, None, graph, lib, "default", params)
+    return graph_rt_module
 
 
 def run_module(
