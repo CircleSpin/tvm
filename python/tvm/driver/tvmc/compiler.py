@@ -112,7 +112,7 @@ def drive_compile(args):
     """
     mod, params = frontends.load_model(args.FILE, args.model_format, args.input_shapes)
 
-    graph, lib, params, dumps = compile_model(
+    graph_rt_module, dumps = compile_model(
         mod,
         params,
         args.target,
@@ -125,7 +125,7 @@ def drive_compile(args):
     if dumps:
         save_dumps(args.output, dumps)
 
-    save_module(args.output, graph, lib, params, args.cross_compiler)
+    save_module(args.output, graph_rt_module, args.cross_compiler)
     return 0
 
 
@@ -240,7 +240,6 @@ def save_module(module_path, graph_rt_module, cross=None):
     """
     Create a tarball containing the generated TVM graph,
     exported library and parameters
-
     Parameters
     ----------
     module_path : str
@@ -250,22 +249,37 @@ def save_module(module_path, graph_rt_module, cross=None):
         A TVM module containing all the required artifacts to run the model (Hence rt as runtime).
     cross : str or callable object, optional
         Function that performs the actual compilation
-
     """
+    # Extract artifacts from graph_rt_module
+    lib = graph_rt_module.get_lib()
+    graph = graph_rt_module.get_json()
+    params = graph_rt_module.get_params()
+
     lib_name = "mod.so"
+    graph_name = "mod.json"
+    param_name = "mod.params"
     temp = utils.tempdir()
     path_lib = temp.relpath(lib_name)
     if not cross:
         logger.debug("exporting library to %s", path_lib)
-        graph_rt_module.export_library(path_lib)
+        lib.export_library(path_lib)
     else:
         logger.debug("exporting library to %s , using cross compiler %s", path_lib, cross)
         lib.export_library(path_lib, cc.cross_compiler(cross))
 
+    with open(temp.relpath(graph_name), "w") as graph_file:
+        logger.debug("writing graph to file to %s", graph_file.name)
+        graph_file.write(graph)
+
+    with open(temp.relpath(param_name), "wb") as params_file:
+        logger.debug("writing params to file to %s", params_file.name)
+        params_file.write(runtime.save_param_dict(params))
+
     logger.debug("saving module as tar file to %s", module_path)
     with tarfile.open(module_path, "w") as tar:
         tar.add(path_lib, lib_name)
-
+        tar.add(temp.relpath(graph_name), graph_name)
+        tar.add(temp.relpath(param_name), param_name)
 
 def save_dumps(module_name, dumps, dump_root="."):
     """
